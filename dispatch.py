@@ -1,3 +1,40 @@
+
+from sys import argv
+from re import compile
+from i3ipc import Connection
+
+
+command = argv[1]    # focus|move
+target = argv[2]     # container|tab
+direction = argv[3]  # left|right|up|down
+
+
+
+
+connection = Connection()
+root = connection.get_tree()
+focus_con = root.find_focused()
+
+if command == 'focus' and target == 'container':
+    if regex_nvim.match():
+        success = change_focus_nvim(direction)
+
+        if not success:
+            tree = i3tree(root)
+            change_focus_container_i3(tree, direction)
+
+'''
+Sup <l | ;> command.
+    If current focus is qutebrowser,
+        
+    Else if current focus is descendent of tab-container,
+        Focus ancestor that is direct child of tab-container
+        If ancestor has sibling in <direction>,
+            Focus sibling
+        Else,
+            Cycle sibling
+'''
+
 #!/usr/bin/env python
 from neovim import attach
 import argparse
@@ -26,53 +63,9 @@ directions = {
         'down': 'j',
 }
 
+regex_nvim = compile('^nvim')
+regex_qutebrowser = compile('^.') # TODO
 
-
-def thunderbird_dispatcher(direction):
-        if direction == 'right':
-                key = "Ctrl+Tab"
-        elif direction == 'left':
-                key = "Ctrl+Shift+Tab"
-        else:
-                return False
-        cmd = "xdotool search '{name}' key '{key}'".format(
-                name=get_focused_window_name(),
-                key=key,
-        )
-        log.debug('Launching command %s' % cmd)
-        os.system(cmd)
-        return True
-
-def weechat_dispatcher(direction):
-        if direction == 'right':
-                key = "F5"
-        elif direction == 'left':
-                key = "F6"
-        else:
-                return False
-        cmd = "xdotool key {key}".format(
-                # name=get_focused_window_name(),
-                key=key,
-        )
-        log.debug('Launching command %s' % cmd)
-        os.system(cmd)
-        return True
-
-
-def nvim_dispatcher(direction):
-        print("TRIDI")
-        log.info("NVIM detected")
-        res, socket = get_nvim_socket()
-
-        if not res:
-                log.error("Could not find vim socket")
-        elif send_nvim_wincmd(socket, directions[direction]):
-                log.debug("nvim changed its focus")
-                # if neovim succeeded changing buffer 
-                return True
-        else:
-                log.debug("nvim did not change focus")
-        return False
 
 def get_dispatcher():
         name = get_focused_window_name()
@@ -80,11 +73,6 @@ def get_dispatcher():
 # if we are focusing neovim
         if name.endswith("NVIM"):
                 return nvim_dispatcher
-        # elif name.startswith("matt@"):
-                # return weechat_dispatcher
-        # elif name.endswith("Thunderbird"):
-        #         return thunderbird_dispatcher
-        
         return i3_dispatcher
 
 def get_focused_window_name():
@@ -95,66 +83,6 @@ def get_focused_window_name():
                 log.error(e)
         return ""
 
-
-def get_nvim_socket():
-        """
-        1/ get pid of focused window
-        2/ look for nvim processes in its children
-        3/ search for socket name in the nvim child process
-        """
-        try:
-                pid = subprocess.check_output("xdotool getwindowfocus getwindowpid", shell=True).decode()
-                pid = pid.rstrip()
-                pid = int(pid)
-                log.debug("Retreived terminal pid %d, nvim should be one of its children" % pid)
-                proc = psutil.Process( pid)
-                log.debug( "proc name %s with %d children" % (proc.name(), len(proc.children(recursive=True))))
-                for child in proc.children(recursive=True):
-                        log.debug("child name & pid %s/%d" % (child.name(), child.pid))
-                        if child.name() == "nvim":
-                                unix_sockets = child.connections(kind="unix")
-                                log.debug("Found an nvim subprocess with %d " % len(unix_sockets))
-                                # look for socket 
-                                # for filename, fd in child.open_files():
-                                # log.debug("Open file %s " % filename)
-                                for con in unix_sockets:
-                                        filename = con.laddr
-                                        log.debug("Socket %s " % filename)
-                                        if "/tmp/nvim" in filename:
-                                                log.debug("Found a match: %s" % filename) 
-                                                return True, filename
-                                return False, ""
-        except Exception as e:
-                log.error('Could not find neovim socket %s' % e)
-                log.error(traceback.format_exc())
-                return False, ""
-
-        # instead of using psutil one could do sthg like:
-        # lsof -a -U -p 15684 -F n | grep /tmp/nvim |head -n1
-
-def send_nvim_wincmd(path_to_socket, direction):
-        log.info("Sending %s to socket %s" % (direction, path_to_socket))
-        try:
-                # path=os.environ["NVIM_LISTEN_ADDRESS"]
-                # https://github.com/neovim/python-client/issues/124
-                nvim = attach('socket', path=path_to_socket)
-                log.debug("nvim attached")
-                nvim.command('let oldwin = winnr()') 
-                nvim.command('wincmd ' + direction)
-                res = nvim.eval('oldwin != winnr()')
-                log.debug("Result of command %d" % res)
-                return res
-        except Exception as e:
-                log.error("Exception %s" % e)
-                return False
-
-        return False
-
-def i3_dispatcher(direction):
-        cmd = "i3-msg focus %s" % (direction)
-        log.info("running command: %s" % cmd)
-        os.system(cmd)
-        return True
 
 """
 Program starts here
