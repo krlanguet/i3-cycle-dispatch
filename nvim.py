@@ -1,4 +1,5 @@
 
+# TODO we can set NVIM_LISTEN_ADDRESS before hand
 # Keys used internally by nvim for direction
 nvim_d = {'left': 'h', 'right': 'l', 'up': 'k', 'down': 'j'}
 

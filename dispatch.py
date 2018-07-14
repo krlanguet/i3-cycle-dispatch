@@ -1,7 +1,64 @@
+#!/usr/bin/env python3
+                                    # Generating command line interface
+from click import group, option, argument, Choice, pass_context, make_pass_decorator
+from re import compile              # Identifying focused window
+from neovim import attach           # Sending focus commands to nvim
+from i3ipc import Connection        # Identifying focused window and context, and sending focus commands
+from subprocess import check_output # Spawining xdotool process to ID focused window
 
-from sys import argv
-from re import compile
-from i3ipc import Connection
+#
+# Logging
+#
+from os import path, getenv         # Creating log file
+from logging import getLogger, FileHandler, INFO, DEBUG
+#import traceback
+#import psutil
+
+# Might be better handled with inheritance
+pass_log = make_pass_decorator(Log)
+class Log():
+    def __init__(self, debug):
+        if debug:
+            self.log = getLogger(__name__)
+            levels = {'Info': INFO, 'Verbose': DEBUG}
+            self.log.setLevel(levels[debug])
+            self.log.addHandler(FileHandler(path.join(getenv("HOME","") , "i3cd.log"), delay=False))
+        else:
+            self.log = None
+
+    def info(message):
+        if self.log:
+            self.log.info(message)
+
+    def debug(message):
+        if self.log:
+            self.log.debug(message)
+
+
+@group()
+@option('--debug', type=Choice(['Info, Verbose']), default='Info')
+@pass_context
+def i3cd(ctx, debug):
+    log = Log(debug)
+    ctx.obj = log
+
+@i3cd.command()
+@argument('target')
+@argument('direction')
+@pass_log
+def focus(log, target, direction):
+    pass
+
+@i3cd.command()
+@argument('target')
+@argument('direction')
+@pass_log
+def move(log, target, direction):
+    pass
+
+#################################### ^ Refactored Code ^ ########################################
+
+'''
 
 
 command = argv[1]    # focus|move
@@ -23,7 +80,7 @@ if command == 'focus' and target == 'container':
             tree = i3tree(root)
             change_focus_container_i3(tree, direction)
 
-'''
+"""
 Sup <l | ;> command.
     If current focus is qutebrowser,
         
@@ -33,25 +90,8 @@ Sup <l | ;> command.
             Focus sibling
         Else,
             Cycle sibling
-'''
-
-#!/usr/bin/env python
-from neovim import attach
-import argparse
-import subprocess
-import os
-import traceback
-import logging
-import psutil
 
 
-log = logging.getLogger(__name__)
-# log.setLevel(logging.INFO)
-log.setLevel(logging.DEBUG)
-
-log.addHandler(logging.FileHandler(os.path.join(os.getenv("HOME","") , "i3dispatch.log"), delay=False))
-
-"""
 Exit value:
 0 => success
 1 => failure
@@ -83,25 +123,4 @@ def get_focused_window_name():
                 log.error(e)
         return ""
 
-
-"""
-Program starts here
-"""
-# TODO we can set NVIM_LISTEN_ADDRESS before hand
-parser = argparse.ArgumentParser(description="parameter to send to wincmd")
-parser.add_argument("direction", choices=directions.keys())
-parser.add_argument("--test", action="store_const", const=True)
-
-args = parser.parse_args()
-
-"""
-get dispatcher function
-"""
-dispatcher = get_dispatcher()
-
-log.info("Calling dispatcher %r with direction %s" % (dispatcher, args.direction))
-# dispatcher("toto")
-# if anything failed or nvim didn't change buffer focus, we forward the command o i3
-if not dispatcher(args.direction):
-        i3_dispatcher(args.direction)
-exit(0)
+'''
