@@ -1,34 +1,34 @@
-# i3-dispatch
-Allows i3 to move focus differently depending on the focused window.
+# i3-cycle-dispatch
+Enables modifying i3 focus and move behavior depending on the focused window.
 
-The goal of this script is to control applications that create tabs themselves (rather then letting the window manager do it) with the same bindings 
-then the WM's.
-For instance, if you are focusing a vim terminal with 2 splits, your WM bindings will allow you to move between splits.
+The goal of this tool is to control tabs and windows using the same commands, whether the program manages its own or not,
+and to enforce a sharp distinction between tabs and windows with different cycling behavior.
 
+It is a fork of [i3-dispatch](https://github.com/teto/i3-dispatch), borrowing inspiration from [i3-cycle](https://github.com/mota/i3-cycle).
 
-Pull requests welcome at https://github.com/teto/i3-dispatch
+## Supported applications
+* Neovim
+* Qutebrowser
 
-
-#Supported applications
-For now only neovim.
-
-
-#How to use ?
-In your i3 configuration, you can replace (some of) your focus bindings by these:
+## Usage
+Install with
+```sh
+python setup.py --install
 ```
-# This may be slow since script involves a few steps
-# so you should keep one set of focus bindings that don't use i3dispatch "just in case"
-bindsym $mod+h exec 3dispatch left
-bindsym $mod+j exec 3dispatch down
-bindsym $mod+k exec 3dispatch up
-bindsym $mod+l exec 3dispatch right
+
+Then use in your i3 configuration, by replacing (some of) your focus and move bindings:
+```
+bindsym $mod+h exec i3cd left
+bindsym $mod+j exec i3cd down
+bindsym $mod+k exec i3cd up
+bindsym $mod+l exec i3cd right
 
 # alternatively, you can use the cursor keys:
-bindsym $mod+Left  exec /usr/bin/3dispatch left
-bindsym $mod+Down  exec /usr/bin/i3dispatch down
-bindsym $mod+Up    exec /usr/bin/i3dispatch up
-bindsym $mod+Right exec /usr/bin/i3dispatch right
+bindsym $mod+Left  exec /usr/bin/i3cd left
+bindsym $mod+Down  exec /usr/bin/i3cd down
+bindsym $mod+Up    exec /usr/bin/i3cd up
+bindsym $mod+Right exec /usr/bin/i3cd right
 
 ```
-#How to debug
-Logs by default in $HOME/i3dispatcher.log
+## Debugging
+Logs by default in $HOME/i3cd.log
