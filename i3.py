@@ -42,8 +42,21 @@ def i3_focus_container_dispatcher(i3_connection, i3_root, focus_con, direction):
     
     return True
 
-def i3_focus_tab_dispatcher():
-    pass
+
+def i3_focus_tab_dispatcher(i3_connection, i3_root, focus_con, direction):
+    if direction not in ['left', 'right']:
+        raise Exception('direction: ' + direction + ' is not a valid focus tab  direction')
+
+    tree = i3tree(i3_root)
+    focus_node = tree.id_table[focus_con.id]
+
+    ancestor, ancestral_degree = find_tab_ancestor(focus_node)
+
+    if ancestor:
+        ancestor.raw_node.command('focus; focus ' + direction)
+        # TODO : cycle through tabs
+
+
 def i3_move_container_dispatcher():
     pass
 def i3_move_tab_dispatcher():

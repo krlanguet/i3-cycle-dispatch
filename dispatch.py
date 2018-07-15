@@ -45,10 +45,10 @@ def i3cd(command = argv[1],     # focus|move
                 i3_focus_container_dispatcher(i3_connection, i3_root, focus_con, direction)
 
         elif target == 'tab':
-            print('looking for a tab;')
+            i3_focus_tab_dispatcher(i3_connection, i3_root, focus_con, direction)
 
         else:
-            raise Exception('target value: ' + target + 'is invalid')
+            raise Exception('target value: ' + target + ' is invalid')
 
     elif command == 'move':
         raise Exception('Command move is currently unimplemented')
