@@ -15,13 +15,12 @@ from logging import getLogger, FileHandler, INFO, DEBUG
 #import psutil
 
 # Might be better handled with inheritance
-pass_log = make_pass_decorator(Log)
 class Log():
-    def __init__(self, debug):
+    def __init__(self, debug, debug_level):
         if debug:
             self.log = getLogger(__name__)
             levels = {'Info': INFO, 'Verbose': DEBUG}
-            self.log.setLevel(levels[debug])
+            self.log.setLevel(levels[debug_level])
             self.log.addHandler(FileHandler(path.join(getenv("HOME","") , "i3cd.log"), delay=False))
         else:
             self.log = None
@@ -33,13 +32,17 @@ class Log():
     def debug(message):
         if self.log:
             self.log.debug(message)
+pass_log = make_pass_decorator(Log)
 
 
 @group()
-@option('--debug', type=Choice(['Info, Verbose']), default='Info')
+@option('--debug', is_flag=True, default=False)
+@option('--debug-level', type=Choice(['Info', 'Verbose']), default='Info', help='Note: Is ignored without explicit --debug.')
 @pass_context
-def i3cd(ctx, debug):
-    log = Log(debug)
+def i3cd(ctx, debug, debug_level):
+    print(debug)
+    print(debug_level)
+    log = Log(debug, debug_level)
     ctx.obj = log
 
 @i3cd.command()
