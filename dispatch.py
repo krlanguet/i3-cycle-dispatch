@@ -40,25 +40,42 @@ pass_log = make_pass_decorator(Log)
 @option('--debug-level', type=Choice(['Info', 'Verbose']), default='Info', help='Note: Is ignored without explicit --debug.')
 @pass_context
 def i3cd(ctx, debug, debug_level):
-    print(debug)
-    print(debug_level)
     log = Log(debug, debug_level)
     ctx.obj = log
 
-@i3cd.command()
-@argument('target')
-@argument('direction')
+@i3cd.group()
 @pass_log
-def focus(log, target, direction):
+def focus(log):
     pass
 
-@i3cd.command()
-@argument('target')
+@focus.command()
 @argument('direction')
 @pass_log
-def move(log, target, direction):
+def container(log, direction):
     pass
 
+@focus.command()
+@argument('direction')
+@pass_log
+def tab(log, direction):
+    pass
+
+@i3cd.group()
+@pass_log
+def move(log):
+    pass
+
+@move.command()
+@argument('direction')
+@pass_log
+def container(log, direction):
+    pass
+
+@move.command()
+@argument('direction')
+@pass_log
+def tab(log, direction):
+    pass
 #################################### ^ Refactored Code ^ ########################################
 
 '''
