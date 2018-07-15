@@ -1,7 +1,18 @@
+from subprocess import check_output # Spawining xdotool process to ID focused window
+
+def get_focused_window_name():
+        try:
+                out = check_output("xdotool getwindowfocus getwindowname", shell=True).decode('utf-8').rstrip()
+                return out
+        except Exception as e:
+                #log.error(e)
+                print(e)
+                pass
+        return ""
 
 def i3_dispatcher(direction):
         cmd = "i3-msg focus %s" % (direction)
-        log.info("running command: %s" % cmd)
+        #log.info("running command: %s" % cmd)
         os.system(cmd)
         return True
 

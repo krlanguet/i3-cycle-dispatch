@@ -1,91 +1,52 @@
 #!/usr/bin/env python3
-                                    # Generating command line interface
-from click import group, option, argument, Choice, pass_context, make_pass_decorator
-from re import compile              # Identifying focused window
+
+# Module imports
+from sys import argv                # Generating command line interface
 from neovim import attach           # Sending focus commands to nvim
 from i3ipc import Connection        # Identifying focused window and context, and sending focus commands
-from subprocess import check_output # Spawining xdotool process to ID focused window
+
+# Local imports
+from i3 import *
+#from nvim import *
 
 #
 # Logging
 #
+'''
 from os import path, getenv         # Creating log file
 from logging import getLogger, FileHandler, INFO, DEBUG
+'''
 #import traceback
 #import psutil
 
-# Might be better handled with inheritance
-class Log():
-    def __init__(self, debug, debug_level):
-        if debug:
-            self.log = getLogger(__name__)
-            levels = {'Info': INFO, 'Verbose': DEBUG}
-            self.log.setLevel(levels[debug_level])
-            self.log.addHandler(FileHandler(path.join(getenv("HOME","") , "i3cd.log"), delay=False))
-        else:
-            self.log = None
-
-    def info(message):
-        if self.log:
-            self.log.info(message)
-
-    def debug(message):
-        if self.log:
-            self.log.debug(message)
-pass_log = make_pass_decorator(Log)
+#log = getLogger(__name__)
+#log.setLevel(DEBUG)
+#log.setLevel(INFO)
+#log.addHandler(FileHandler(path.join(getenv("HOME","") , "i3cd.log"), delay=False))
+#
+# End of Logging
+#
 
 
-@group()
-@option('--debug', is_flag=True, default=False)
-@option('--debug-level', type=Choice(['Info', 'Verbose']), default='Info', help='Note: Is ignored without explicit --debug.')
-@pass_context
-def i3cd(ctx, debug, debug_level):
-    log = Log(debug, debug_level)
-    ctx.obj = log
+# Main function : Determines appropriate dispatch function given context
+def i3cd(command = argv[1],     # focus|move
+         target = argv[2],      # container|tab
+         direction = argv[3]    # left|right|up|down
+    ):
+    print(command, target, direction)
+    
 
-@i3cd.group()
-@pass_log
-def focus(log):
-    pass
+    focus_name = get_focused_window_name()
+    if command == 'focus':
+        if target == 'container':
+            if focus_name.startswith('nvim'):
+                print('neovim!')
 
-@focus.command()
-@argument('direction')
-@pass_log
-def container(log, direction):
-    pass
 
-@focus.command()
-@argument('direction')
-@pass_log
-def tab(log, direction):
-    pass
 
-@i3cd.group()
-@pass_log
-def move(log):
-    pass
-
-@move.command()
-@argument('direction')
-@pass_log
-def container(log, direction):
-    pass
-
-@move.command()
-@argument('direction')
-@pass_log
-def tab(log, direction):
-    pass
 #################################### ^ Refactored Code ^ ########################################
 
 '''
-
-
-command = argv[1]    # focus|move
-target = argv[2]     # container|tab
-direction = argv[3]  # left|right|up|down
-
-
 
 
 connection = Connection()
@@ -123,24 +84,15 @@ directions = {
         'down': 'j',
 }
 
-regex_nvim = compile('^nvim')
-regex_qutebrowser = compile('^.') # TODO
 
 
 def get_dispatcher():
         name = get_focused_window_name()
-        log.debug("Window name=%s" % name)
+        #log.debug("Window name=%s" % name)
 # if we are focusing neovim
         if name.endswith("NVIM"):
                 return nvim_dispatcher
         return i3_dispatcher
 
-def get_focused_window_name():
-        try:
-                out = subprocess.check_output("xdotool getwindowfocus getwindowname", shell=True).decode('utf-8').rstrip()
-                return out
-        except Exception as e:
-                log.error(e)
-        return ""
 
 '''
