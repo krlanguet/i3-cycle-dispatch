@@ -32,3 +32,9 @@ bindsym $mod+Right exec /usr/bin/i3cd right
 ```
 ## Debugging
 Logs by default in $HOME/i3cd.log
+
+## Plan
+Implement Focus changing in Python.
+Rewrite in Go.
+Then implement move.
+Then rewrite in C.

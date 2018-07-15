@@ -1,21 +1,53 @@
-from subprocess import check_output # Spawining xdotool process to ID focused window
+from i3ipc import Connection        # Identifying context and sending focus commands
 
+# Uses i3ipcs to get name of currently focused window. Slower than xdotool, but saves time in the case that
+#  i3_focus_dispatcher gets called anyways.
 def get_focused_window_name():
-        try:
-                out = check_output("xdotool getwindowfocus getwindowname", shell=True).decode('utf-8').rstrip()
-                return out
-        except Exception as e:
-                #log.error(e)
-                print(e)
+    connection = Connection()
+    root = connection.get_tree()
+    focus_con = root.find_focused()
+
+    return focus_con.name, focus_con, root, connection
+
+def i3_focus_container_dispatcher(i3_connection, i3_root, focus_con, direction):
+    tree = i3tree(i3_root)
+    focus_node = tree.id_table[focus_con.id]
+
+    ancestor, ancestral_degree = find_tab_ancestor(focus_node)
+
+    # If current focus is somewhere inside a tab-container
+    if ancestor:
+        # If current focus is direct child of tab-container,
+        if ancestral_degree == 0:
+            i3_connection.command('focus parent; focus ' + direction)
+
+        # Current focus is descendent but not child of tab-container
+        else:
+            
+            # If has neighbor within current tab, focus it
+            if not check_against_boundary(focus_node, ancestor, direction):
+                i3_connection.command('focus ' + direction)
+
+            elif check_against_boundary(focus_node, tree.root, direction):
                 pass
-        return ""
+                # TODO : cycle through containers in current tab
 
-def i3_dispatcher(direction):
-        cmd = "i3-msg focus %s" % (direction)
-        #log.info("running command: %s" % cmd)
-        os.system(cmd)
-        return True
+            # Next container in direction is outside tab-container
+            else:
+                ancestor.parent.raw_node.command('focus; focus ' + direction)
 
+    # Current focus is not inside a tab-container
+    else:
+        i3_connection.command('focus ' + direction)
+    
+    return True
+
+def i3_focus_tab_dispatcher():
+    pass
+def i3_move_container_dispatcher():
+    pass
+def i3_move_tab_dispatcher():
+    pass
             
 class i3tree:
     # self.id_table : dictionary of id: node pairs
@@ -29,45 +61,46 @@ class i3tree:
         # self.id
         # self.parent
         # self.children
+        # self.raw_node
 
         def __init__(self, i3tree, raw_node, parent=None):
             self.id = raw_node.id
             self.layout = raw_node.layout
             self.parent = parent
             self.children = []
-            for child in raw_node.descendents():
+            for child in raw_node.nodes:
                 self.children.append(i3tree.Node(i3tree, child, self))
+            self.raw_node = raw_node
 
             i3tree.id_table[self.id] = self
 
 
-def find_tabbed_ancestor(tree, con):
-    node = tree.id_table[con.id]
-
+def find_tab_ancestor(node):
     ancestral_degree = 0
     while node.parent: # I don't think this is an off-by-one because the root is not interesting
-        if node.layout == 'tabbed':
+        if node.parent.layout == 'tabbed':
             return node, ancestral_degree
         node = node.parent
         ancestral_degree += 1
 
     return False, False
 
-def find_aunt_in_direction(tree, con, direction):
-    pass
+def check_against_boundary(node, ancestor, direction):
+    # Checks difference between currently focused node and boundary of ancestor in desired direction
+    # small gap between node and boundary => no neighbor in desired direction
+    # TODO make more robust, factoring in size of gaps
+    # TODO Probably won't work with multi monitor setup => need to look into actual current screen size, like current workspace
+    too_small = 20
 
-def change_focus_container_i3(tree, direction):
-    ancestor, ancestral_degree = find_tabbed_ancestor(tree, focus_con)
-    if ancestor:
-        # If current focus is direct child of tab-container,
-        if ancestral_degree == 1:
-            pass # (Focus parent, then focus <direction>)
-        
-        aunt = find_tabbed_aunt(tree, focus_con, direction)
-        if aunt:
-            pass # Focus aunt (by id)
+    # !! Remember that in graphics, the upper left corner is (0,0)
+    if direction == 'left':
+        relevant_difference = node.raw_node.rect.x - ancestor.raw_node.rect.x
+    elif direction == 'right':
+        relevant_difference = (ancestor.raw_node.rect.x + ancestor.raw_node.rect.width) - (node.raw_node.rect.x + node.raw_node.rect.width)
+    elif direction == 'up':
+        relevant_difference = node.raw_node.rect.y - ancestor.raw_node.rect.y
+    elif direction == 'down':
+        relevant_difference = (ancestor.raw_node.rect.y + ancestor.raw_node.rect.height) - (node.raw_node.rect.y + node.raw_node.rect.height)
 
-        # Focus ancestor, then focus <direction>
-    else:
-        #connection.command() # Focus <direction>
-        pass
+    return relevant_difference <= too_small
+

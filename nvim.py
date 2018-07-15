@@ -1,28 +1,31 @@
+from neovim import attach           # Sending focus commands to nvim
+from subprocess import check_output # Spawining xdotool process to ID focused window
+from psutil import Process
 
 # TODO we can set NVIM_LISTEN_ADDRESS before hand
 # Keys used internally by nvim for direction
 nvim_d = {'left': 'h', 'right': 'l', 'up': 'k', 'down': 'j'}
 
-def change_focus_nvim(direction):
-    con_nvim = ''
-    cur_nvim_window_num = '' #con_nvim.command('winnr')
-    #con_nvim.command('wincmd ' + nvim_d[direction])
-    return not True #cur_nvim_window_num == con_nvim.command('winnr')
 
-def nvim_dispatcher(direction):
-        print("TRIDI")
+def nvim_focus_dispatcher(direction):
         #log.info("NVIM detected")
         res, socket = get_nvim_socket()
 
         if not res:
                 #log.error("Could not find vim socket")
-        elif send_nvim_wincmd(socket, directions[direction]):
+                print("Could not find vim socket")
+                pass
+        elif send_nvim_wincmd(socket, nvim_d[direction]):
                 #log.debug("nvim changed its focus")
                 # if neovim succeeded changing buffer 
                 return True
         else:
                 #log.debug("nvim did not change focus")
+                pass
         return False
+
+def nvim_move_dispatcher():
+    pass
 
 def get_nvim_socket():
         """
@@ -31,11 +34,11 @@ def get_nvim_socket():
         3/ search for socket name in the nvim child process
         """
         try:
-                pid = subprocess.check_output("xdotool getwindowfocus getwindowpid", shell=True).decode()
+                pid = check_output("xdotool getwindowfocus getwindowpid", shell=True).decode()
                 pid = pid.rstrip()
                 pid = int(pid)
                 #log.debug("Retreived terminal pid %d, nvim should be one of its children" % pid)
-                proc = psutil.Process( pid)
+                proc = Process( pid)
                 #log.debug( "proc name %s with %d children" % (proc.name(), len(proc.children(recursive=True))))
                 for child in proc.children(recursive=True):
                         #log.debug("child name & pid %s/%d" % (child.name(), child.pid))
@@ -54,6 +57,7 @@ def get_nvim_socket():
                                 return False, ""
         except Exception as e:
                 #log.error('Could not find neovim socket %s' % e)
+                print('Could not find neovim socket %s' % e)
                 #log.error(traceback.format_exc())
                 return False, ""
 
