@@ -4,9 +4,9 @@
 from sys import argv                # Generating command line interface
 
 # Local imports
-from i3 import get_focused_window_name, i3_focus_container_dispatcher, i3_focus_tab_dispatcher
-from i3 import i3_move_container_dispatcher, i3_move_tab_dispatcher
-from nvim import nvim_focus_dispatcher, nvim_move_dispatcher
+from i3cd.i3 import get_focused_window_name, i3_focus_container_dispatcher, i3_focus_tab_dispatcher
+from i3cd.i3 import i3_move_container_dispatcher, i3_move_tab_dispatcher
+from i3cd.nvim import nvim_focus_dispatcher, nvim_move_dispatcher
 
 #
 # Logging
